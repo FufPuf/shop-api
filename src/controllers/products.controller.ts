@@ -14,4 +14,13 @@ productsController.get('/', (req, res) => {
   res.json(filteredProducts);
 });
 
+productsController.get('/:id', (req, res) => {
+  const { id } = req.params;
+  const products = getProducts();
+  const product = products.find(product => product.id === Number(id));
+  
+  if (product) res.json(product);
+  else res.status(404).json({ error: "Product not found" });
+});
+
 export default productsController;
