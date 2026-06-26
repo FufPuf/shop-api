@@ -1,5 +1,6 @@
 import { getProducts } from '../routes/products.js';
 import express from 'express';
+import httpError from '../utils/httpError.js';
 
 const productsController = express.Router();
 
@@ -14,13 +15,16 @@ productsController.get('/', (req, res) => {
   res.json(filteredProducts);
 });
 
-productsController.get('/:id', (req, res) => {
+productsController.get('/:id', (req, res, next) => {
   const { id } = req.params;
   const products = getProducts();
   const product = products.find(product => product.id === Number(id));
   
-  if (product) res.json(product);
-  else res.status(404).json({ error: "Product not found" });
+  if (product) {
+    res.json(product);
+  } else {
+    next(httpError(404, "Product not found"));
+  }
 });
 
 export default productsController;
