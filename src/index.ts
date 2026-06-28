@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import productsController from './controllers/products.controller.js';
 import categoriesController from './controllers/categories.controller.js';
@@ -5,8 +6,9 @@ import categoriesController from './controllers/categories.controller.js';
 import type { HttpError } from './utils/httpError.js';
 
 const app = express();
-const port = 3000;
+const port = Number(process.env.PORT) || 3000;
 
+app.use(express.json());
 app.use('/products', productsController);
 app.use('/categories', categoriesController);
 

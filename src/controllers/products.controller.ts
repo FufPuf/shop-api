@@ -1,4 +1,4 @@
-import { getProducts } from '../routes/products.js';
+import { addProduct, getProducts } from '../routes/products.js';
 import express from 'express';
 import httpError from '../utils/httpError.js';
 
@@ -25,6 +25,25 @@ productsController.get('/:id', (req, res, next) => {
   } else {
     next(httpError(404, "Product not found"));
   }
+});
+
+productsController.post('/', (req, res, next) => {
+  const { name, price, inStock, categoryId } = req.body;
+  if (!name || price === undefined || inStock === undefined || categoryId === undefined) {
+    return next(httpError(400, "Missing required fields"));
+  }
+
+  const products = getProducts();
+  const id = Math.max(...products.map(p => p.id)) + 1;
+  const newProduct = {
+    id,
+    name,
+    price,
+    inStock,
+    categoryId
+  };
+  addProduct(newProduct);
+  res.status(201).json(newProduct);
 });
 
 export default productsController;
