@@ -42,4 +42,39 @@ const createProduct = (data: { name: string, price: number, categoryId: number, 
     return getProductById(result.lastInsertRowid as number) as Product | undefined;
 };
 
-export { getAllProducts, getProductById, createProduct };
+/**
+ * Update an existing product
+ * @param id - The ID of the product to update
+ * @param data - The updated product data
+ * @returns The updated product, or undefined if the product does not exist
+ */
+const updateProduct = (id: number, data: { name?: string, price?: number, categoryId?: number, inStock?: boolean }): Product | undefined => {
+    const product = getProductById(id);
+    if (!product) {
+        return undefined;
+    }
+
+    const updatedProduct = {
+        ...product,
+        ...data,
+        inStock: data.inStock !== undefined ? data.inStock : product.inStock,
+    };
+
+    const update = db.prepare('UPDATE products SET name = ?, price = ?, categoryId = ?, inStock = ? WHERE id = ?');
+    update.run(updatedProduct.name, updatedProduct.price, updatedProduct.categoryId, updatedProduct.inStock ? 1 : 0, id);
+
+    return getProductById(id) as Product ;
+};
+
+/**
+ * Delete a product by its ID
+ * @param id - The ID of the product to delete
+ * @returns A boolean indicating whether the product was successfully deleted
+ */
+const deleteProduct = (id: number): boolean => {
+    const deleteStmt = db.prepare('DELETE FROM products WHERE id = ?');
+    const result = deleteStmt.run(id);
+    return result.changes > 0;
+};
+
+export { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct };

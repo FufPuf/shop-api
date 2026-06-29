@@ -6,3 +6,5 @@ export const createProductSchema = z.object({
   inStock: z.boolean(),
   categoryId: z.number().int().positive("Category ID must be a positive integer"),
 });
+
+export const updateProductSchema = createProductSchema.partial();
