@@ -1,14 +1,15 @@
-import { addProduct, getProducts } from '../routes/products.js';
+import { getAllProducts, getProductById, createProduct} from '../services/products.service.js';
 import express from 'express';
 import httpError from '../utils/httpError.js';
+import { createProductSchema } from '../validators/product.validator.js';
 
 const productsController = express.Router();
 
 productsController.get('/', (req, res) => {
   const { inStock, categoryId } = req.query;
-  const products = getProducts();
+  const products = getAllProducts();
   const filteredProducts = products.filter(product => {
-    if (inStock !== undefined && product.inStock !== (inStock === 'true')) return false;
+    if (inStock !== undefined && Boolean(product.inStock) !== (inStock === 'true')) return false;
     if (categoryId !== undefined && product.categoryId !== Number(categoryId)) return false;
     return true;
   });
@@ -17,8 +18,7 @@ productsController.get('/', (req, res) => {
 
 productsController.get('/:id', (req, res, next) => {
   const { id } = req.params;
-  const products = getProducts();
-  const product = products.find(product => product.id === Number(id));
+  const product = getProductById(Number(id));
   
   if (product) {
     res.json(product);
@@ -28,22 +28,17 @@ productsController.get('/:id', (req, res, next) => {
 });
 
 productsController.post('/', (req, res, next) => {
-  const { name, price, inStock, categoryId } = req.body;
-  if (!name || price === undefined || inStock === undefined || categoryId === undefined) {
-    return next(httpError(400, "Missing required fields"));
+  const result = createProductSchema.safeParse(req.body);
+  if (!result.success) {
+    return next(httpError(400, result.error.issues.map(issue => issue.message).join(', ')));
   }
 
-  const products = getProducts();
-  const id = Math.max(...products.map(p => p.id)) + 1;
-  const newProduct = {
-    id,
-    name,
-    price,
-    inStock,
-    categoryId
-  };
-  addProduct(newProduct);
-  res.status(201).json(newProduct);
+  const newProduct = createProduct(result.data);
+  if (newProduct) {
+    res.status(201).json(newProduct);
+  } else {
+    next(httpError(500, "Failed to create product"));
+  }
 });
 
 export default productsController;
