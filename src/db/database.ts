@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 
 const db = new Database('shop.db');
 
+// Products table schema
 // Create table if not exists
 db.exec(`
   CREATE TABLE IF NOT EXISTS products (
@@ -13,10 +14,27 @@ db.exec(`
   )
 `);
 
+// Categories table schema
+// Create table if not exists
+db.exec(`
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL
+  )
+`);
+
+// Check if the products table is empty
 const isProductsTableEmpty = (
     db.prepare('SELECT COUNT(*) AS count FROM products').get() as { count: number }
 ).count === 0;
 
+// Check if the categories table is empty
+const isCategoriesTableEmpty = (
+    db.prepare('SELECT COUNT(*) AS count FROM categories').get() as { count: number }
+).count === 0;
+
+// Insert initial data if tables are empty
 if (isProductsTableEmpty) {
     const insert = db.prepare('INSERT INTO products (name, price, categoryId, inStock) VALUES (?, ?, ?, ?)');
     const products = [
@@ -32,6 +50,24 @@ if (isProductsTableEmpty) {
     });
 
     insertMany(products);
+}
+
+// Insert initial categories if the categories table is empty
+if (isCategoriesTableEmpty) {
+    const insert = db.prepare('INSERT INTO categories (name, slug) VALUES (?, ?)');
+    const categories = [
+    { name: 'Category A', slug: 'category-a' },
+    { name: 'Category B', slug: 'category-b' },
+    { name: 'Category C', slug: 'category-c' },
+  ];
+
+    const insertMany = db.transaction((categories: { name: string; slug: string }[]): void => {
+        for (const category of categories) {
+            insert.run(category.name, category.slug);
+        }
+    });
+
+    insertMany(categories);
 }
 
 export default db;

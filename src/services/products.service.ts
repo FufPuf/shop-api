@@ -7,8 +7,15 @@ import type { Product } from "../routes/products.js";
  * @returns The mapped Product object
  */
 const mapProduct = (row: any): Product => ({
-  ...row,
+  id: row.id,
+  name: row.name,
+  price: row.price,
   inStock: row.inStock === 1,
+  category: {
+    id: row.categoryId,
+    name: row.categoryName,
+    slug: row.categorySlug,
+  }
 });
 
 /**
@@ -16,7 +23,7 @@ const mapProduct = (row: any): Product => ({
  * @returns An array of all products
  */
 const getAllProducts = (): Product[] => {
-  const products: Product[] = db.prepare('SELECT * FROM products').all() as Product[];
+  const products: Product[] = db.prepare('SELECT products.*, categories.name as categoryName, categories.slug as categorySlug FROM products JOIN categories ON products.categoryId = categories.id').all() as Product[];
   return products.map(mapProduct);
 };
 
@@ -26,7 +33,7 @@ const getAllProducts = (): Product[] => {
  * @returns The product with the specified ID
  */
 const getProductById = (id: number): Product | undefined => {
-  const product: Product | undefined = db.prepare('SELECT * FROM products WHERE id = ?').get(id) as Product | undefined;
+  const product: Product | undefined = db.prepare('SELECT products.*, categories.name as categoryName, categories.slug as categorySlug FROM products JOIN categories ON products.categoryId = categories.id WHERE products.id = ?').get(id) as Product | undefined;
   return product ? mapProduct(product) : undefined;
 };
 
@@ -57,11 +64,12 @@ const updateProduct = (id: number, data: { name?: string, price?: number, catego
     const updatedProduct = {
         ...product,
         ...data,
+        category: data.categoryId ? { id: data.categoryId, name: '', slug: '' } : product.category,
         inStock: data.inStock !== undefined ? data.inStock : product.inStock,
     };
 
     const update = db.prepare('UPDATE products SET name = ?, price = ?, categoryId = ?, inStock = ? WHERE id = ?');
-    update.run(updatedProduct.name, updatedProduct.price, updatedProduct.categoryId, updatedProduct.inStock ? 1 : 0, id);
+    update.run(updatedProduct.name, updatedProduct.price, updatedProduct.category.id, updatedProduct.inStock ? 1 : 0, id);
 
     return getProductById(id) as Product ;
 };

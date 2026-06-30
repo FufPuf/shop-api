@@ -1,18 +1,17 @@
-import { getCategories } from '../routes/categories.js';
+import { getAllCategories, getCategoryById } from '../services/categories.service.js';
 import express from 'express';
 import httpError from '../utils/httpError.js';
 
 const categoriesController = express.Router();
 
 categoriesController.get('/', (req, res) => {
-  const categories = getCategories();
+  const categories = getAllCategories();
   res.json(categories);
 });
 
 categoriesController.get('/:id', (req, res, next) => {
   const { id } = req.params;
-  const categories = getCategories();
-  const category = categories.find(category => category.id === Number(id));
+  const category = getCategoryById(Number(id));
   
   if (category) {
     res.json(category);
