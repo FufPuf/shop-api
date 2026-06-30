@@ -1,7 +1,9 @@
-import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct} from '../services/products.service.js';
 import express from 'express';
+
+import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct} from '../services/products.service.js';
 import httpError from '../utils/httpError.js';
 import { createProductSchema, updateProductSchema } from '../validators/product.validator.js';
+import authMiddleware from '../middleware/auth.middleware.js';
 
 /**
  * Products controller
@@ -11,12 +13,12 @@ const productsController = express.Router();
 /**
  * Get all products
  */
-productsController.get('/', (req, res) => {
+productsController.get('/', authMiddleware, (req, res) => {
   const { inStock, categoryId } = req.query;
   const products = getAllProducts();
   const filteredProducts = products.filter(product => {
     if (inStock !== undefined && Boolean(product.inStock) !== (inStock === 'true')) return false;
-    if (categoryId !== undefined && product.categoryId !== Number(categoryId)) return false;
+    if (categoryId !== undefined && product.category.id !== Number(categoryId)) return false;
     return true;
   });
   res.json(filteredProducts);
@@ -25,7 +27,7 @@ productsController.get('/', (req, res) => {
 /**
  * Get a product by ID
  */
-productsController.get('/:id', (req, res, next) => {
+productsController.get('/:id', authMiddleware, (req, res, next) => {
   const { id } = req.params;
   const product = getProductById(Number(id));
   
@@ -39,7 +41,7 @@ productsController.get('/:id', (req, res, next) => {
 /**
  * Create a new product
  */
-productsController.post('/', (req, res, next) => {
+productsController.post('/', authMiddleware, (req, res, next) => {
   const result = createProductSchema.safeParse(req.body);
   if (!result.success) {
     return next(httpError(400, result.error.issues.map(issue => issue.message).join(', ')));
@@ -56,7 +58,7 @@ productsController.post('/', (req, res, next) => {
 /**
  * Update a product by ID
  */
-productsController.patch('/:id', (req, res, next) => {
+productsController.patch('/:id', authMiddleware, (req, res, next) => {
   const { id } = req.params;
   const validationResult = updateProductSchema.safeParse(req.body);
   if (!validationResult.success) {
@@ -76,7 +78,7 @@ productsController.patch('/:id', (req, res, next) => {
 /**
  * Delete a product by ID
  */
-productsController.delete('/:id', (req, res, next) => {
+productsController.delete('/:id', authMiddleware, (req, res, next) => {
   const { id } = req.params;
   const isDeleted = deleteProduct(Number(id));
 

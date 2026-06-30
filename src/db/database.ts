@@ -2,6 +2,8 @@ import Database from 'better-sqlite3';
 
 const db = new Database('shop.db');
 
+//--------------------------------------- init products table ---------------------------------------//
+
 // Products table schema
 // Create table if not exists
 db.exec(`
@@ -14,24 +16,9 @@ db.exec(`
   )
 `);
 
-// Categories table schema
-// Create table if not exists
-db.exec(`
-  CREATE TABLE IF NOT EXISTS categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL
-  )
-`);
-
 // Check if the products table is empty
 const isProductsTableEmpty = (
     db.prepare('SELECT COUNT(*) AS count FROM products').get() as { count: number }
-).count === 0;
-
-// Check if the categories table is empty
-const isCategoriesTableEmpty = (
-    db.prepare('SELECT COUNT(*) AS count FROM categories').get() as { count: number }
 ).count === 0;
 
 // Insert initial data if tables are empty
@@ -52,6 +39,22 @@ if (isProductsTableEmpty) {
     insertMany(products);
 }
 
+//--------------------------------------- init categories table ---------------------------------------//
+
+// Create table if not exists
+db.exec(`
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL
+  )
+`);
+
+// Check if the categories table is empty
+const isCategoriesTableEmpty = (
+    db.prepare('SELECT COUNT(*) AS count FROM categories').get() as { count: number }
+).count === 0;
+
 // Insert initial categories if the categories table is empty
 if (isCategoriesTableEmpty) {
     const insert = db.prepare('INSERT INTO categories (name, slug) VALUES (?, ?)');
@@ -69,5 +72,16 @@ if (isCategoriesTableEmpty) {
 
     insertMany(categories);
 }
+
+//--------------------------------------- init users table ---------------------------------------//
+
+// Create table if not exists
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL
+  )
+`);
 
 export default db;
