@@ -1,9 +1,10 @@
 import express from 'express';
 
-import { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct} from '../services/products.service.js';
+import { getProductCount, getAllProducts, getProductById, createProduct, updateProduct, deleteProduct} from '../services/products.service.js';
 import httpError from '../utils/httpError.js';
 import { createProductSchema, updateProductSchema } from '../validators/product.validator.js';
 import authMiddleware from '../middleware/auth.middleware.js';
+import type { Product } from '../routes/products.js';
 
 /**
  * Products controller
@@ -14,14 +15,22 @@ const productsController = express.Router();
  * Get all products
  */
 productsController.get('/', authMiddleware, (req, res) => {
-  const { inStock, categoryId } = req.query;
-  const products = getAllProducts();
-  const filteredProducts = products.filter(product => {
-    if (inStock !== undefined && Boolean(product.inStock) !== (inStock === 'true')) return false;
-    if (categoryId !== undefined && product.category.id !== Number(categoryId)) return false;
-    return true;
+  const products: Product[] = [];
+  const { inStock, categoryId, page = '1', pageSize = '10' } = req.query;
+  const filters = { inStock: inStock === 'true' ? 1 : inStock === 'false' ? 0 : undefined, categoryId: categoryId ? Number(categoryId) : undefined };
+  const count = getProductCount(filters);
+
+  if (count > 0) {
+    products.push(...getAllProducts(Number(page), Number(pageSize), filters));
+  }
+
+  res.json({
+    data: products,
+    total: count,
+    page: Number(page),
+    limit: Number(pageSize),
+    totalPages: Math.ceil(count / Number(pageSize))
   });
-  res.json(filteredProducts);
 });
 
 /**

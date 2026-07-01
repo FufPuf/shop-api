@@ -19,11 +19,60 @@ const mapProduct = (row: any): Product => ({
 });
 
 /**
+ * Get the total count of products in the database
+ * @returns The total number of products
+ */
+const getProductCount = (filters?: { inStock?: number | undefined, categoryId?: number | undefined }): number => {
+  let query = 'SELECT COUNT(*) as count FROM products';
+  const queryParams: any[] = [];
+
+  if (filters) {
+    const filterConditions: string[] = [];
+    if (filters.inStock !== undefined) {
+      filterConditions.push('inStock = ?');
+      queryParams.push(filters.inStock);
+    }
+    if (filters.categoryId !== undefined) {
+      filterConditions.push('categoryId = ?');
+      queryParams.push(filters.categoryId);
+    }
+    if (filterConditions.length > 0) {
+      query += ' WHERE ' + filterConditions.join(' AND ');
+    }
+  }
+
+  const countRow = db.prepare(query).get(...queryParams) as { count: number };
+  return countRow.count;
+};
+
+/**
  * Get all products from the database
  * @returns An array of all products
  */
-const getAllProducts = (): Product[] => {
-  const products: Product[] = db.prepare('SELECT products.*, categories.name as categoryName, categories.slug as categorySlug FROM products JOIN categories ON products.categoryId = categories.id').all() as Product[];
+const getAllProducts = (page: number, pageSize: number, filters?: { inStock?: number | undefined, categoryId?: number | undefined }): Product[] => {
+  const offset = (page - 1) * pageSize;
+  let query = 'SELECT products.*, categories.name as categoryName, categories.slug as categorySlug FROM products JOIN categories ON products.categoryId = categories.id';
+  const queryParams: any[] = [];
+
+  if (filters) {
+    const filterConditions: string[] = [];
+    if (filters.inStock !== undefined) {
+      filterConditions.push('products.inStock = ?');
+      queryParams.push(filters.inStock);
+    }
+    if (filters.categoryId !== undefined) {
+      filterConditions.push('products.categoryId = ?');
+      queryParams.push(filters.categoryId);
+    }
+    if (filterConditions.length > 0) {
+      query += ' WHERE ' + filterConditions.join(' AND ');
+    }
+  }
+
+  query += ' LIMIT ? OFFSET ?';
+  queryParams.push(pageSize, offset);
+
+  const products: Product[] = db.prepare(query).all(...queryParams) as Product[];
   return products.map(mapProduct);
 };
 
@@ -85,4 +134,4 @@ const deleteProduct = (id: number): boolean => {
     return result.changes > 0;
 };
 
-export { getAllProducts, getProductById, createProduct, updateProduct, deleteProduct };
+export { getProductCount, getAllProducts, getProductById, createProduct, updateProduct, deleteProduct };
