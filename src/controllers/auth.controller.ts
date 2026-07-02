@@ -23,6 +23,10 @@ authController.post('/register', async (req, res, next) => {
 
 authController.post('/login', async (req, res, next) => {
   const { email, password } = req.body;
+  const result = createUserSchema.safeParse(req.body);
+  if (!result.success) {
+    return next(httpError(400, result.error.issues.map(i => i.message).join(', ')));
+  }
   
   try {
     const token = await login(email, password);

@@ -22,6 +22,12 @@ app.use((err: HttpError, req: express.Request, res: express.Response, next: expr
   res.status(statusCode).json({ error: err.message || "Internal Server Error" });
 });
 
-app.listen(port, () => {
-  logger.info(`Server is running at http://localhost:${port}`);
-});
+const isMain = process.argv[1]?.endsWith('index.js') || process.argv[1]?.endsWith('index.ts');
+
+if (isMain) {
+  app.listen(port, () => {
+    logger.info(`Server is running at http://localhost:${port}`);
+  });
+}
+
+export default app;
